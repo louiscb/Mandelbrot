@@ -2,7 +2,6 @@ defmodule Brot do
   def mandelbrot(c, m) do
     z0 = Complex.new(0, 0)
     test(0, z0, c, m)
-    PPM.write('image.ppm', [[{:rgb, 100,100,100}]])
   end
 
   def test(i, z, c , m) do
@@ -16,6 +15,62 @@ defmodule Brot do
         z = Complex.add(Complex.sqr(z), c)
         test(i+1, z, c , m)
       end
+    end
+  end
+end
+
+defmodule Mandel do
+  def mandelbrot(width, height, x, y, k, depth) do
+    trans = fn(w, h) ->
+      Complex.new(x + k * (w - 1), y - k * (h - 1))
+    end
+    rows(width, height, trans, depth, [], 0)
+  end
+
+  def rows(width, height, trans, depth, rows_list, y) when y == height do
+    rows_list
+  end
+  def rows(width, height, trans, depth, rows_list, y) do
+    {row, y} = generate_row(width, trans, depth, [], 0, y)
+    rows(width, height, trans, depth, rows_list ++ [row], y+1)
+  end
+
+  def generate_row(width, trans, depth, row, x, y) when x == width do
+    {row, y}
+  end
+  def generate_row(width, trans, depth, row, x, y) do
+    equation = trans.(x,y)
+    depth_of_equation = Brot.mandelbrot(equation, depth)
+    color = Color.convert(depth_of_equation, depth)
+    generate_row(width, trans, depth, row ++ [color], x+1, y)
+  end
+
+  def demo() do
+    small(-2.6, 1.2, 1.2)
+  end
+
+  def small(x0, y0, xn) do
+    width = 960
+    height = 540
+    depth = 64
+    k = (xn - x0) / width
+    image = Mandel.mandelbrot(width, height, x0, y0, k, depth)
+    PPM.write("small.ppm", image)
+  end
+end
+
+defmodule Color do
+  def convert(depth, max) do
+    f = depth/max
+    a = f * 4
+    x = trunc(a)
+    y = trunc(255*(a-x))
+    case x do
+      0 -> {:rgb, y, 0 ,0}
+      1 -> {:rgb, 255, y, 0}
+      2 -> {:rgb, 255-y, 255, 0}
+      3 -> {:rgb, 0, 255, y}
+      4 -> {:rgb, 0, 255-y, 255}
     end
   end
 end
@@ -39,22 +94,6 @@ defmodule Complex do
   end
 end
 
-defmodule Color do
-  def convert(depth, max) do
-    f = depth/max
-    a = f * 4
-    x = trunc(a)
-    y = trunc(255*(a-x))
-    case x do
-      0 -> {y, 0 ,0}
-      1 -> {255, y, 0}
-      2 -> {255-y, 255, 0}
-      3 -> {0, 255, y}
-      4 -> {0, 255-y, 255}
-    end
-  end
-end
-
 defmodule PPM do
 
   # write(name, image) The image is a list of rows, each row a list of
@@ -71,17 +110,16 @@ defmodule PPM do
     File.close(fd)
   end
 
-  defp rows(rows, fd) do
+  def rows(rows, fd) do
     Enum.each(rows, fn(r) ->
       colors = row(r)
       IO.write(fd, colors)
     end)
   end
 
-  defp row(row) do
+  def row(row) do
     List.foldr(row, [], fn({:rgb, r, g, b}, a) ->
       [r, g, b | a]
     end)
   end
-
 end
