@@ -14,3 +14,6 @@ It will generate a new image called `new.ppm`
 
 To change the generation of the image, change the values of the variables in Mandel.demo and Mandel.small
 
+#### Example Mandelbrot Image
+
+![alt text](./small.jpg)
