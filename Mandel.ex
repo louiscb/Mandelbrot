@@ -55,7 +55,7 @@ defmodule Mandel do
     depth = 64
     k = (xn - x0) / width
     image = Mandel.mandelbrot(width, height, x0, y0, k, depth)
-    PPM.write("small.ppm", image)
+    PPM.write("new.ppm", image)
   end
 end
 
